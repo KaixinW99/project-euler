@@ -41,7 +41,14 @@ def read_solved(path: Path) -> set[int]:
             "Download 'Problems Solved by ID' from https://projecteuler.net/progress "
             f"and save it as {path.name} in the repository root."
         )
-    ids = {int(n) for n in re.findall(r"\d+", path.read_text(encoding="utf-8"))}
+    # Accepts both export formats from the progress page:
+    #   "961##2026-03-25 20:28:26"  (one problem per line, with the solve time)
+    #   "1, 2, 3, ..."              (comma/space separated)
+    # Everything after "#" on a line is a timestamp, not a problem number, and bonus
+    # problems ("B1") are skipped because they are not part of the numbered grid.
+    ids: set[int] = set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        ids.update(int(n) for n in re.findall(r"\b\d+\b", line.split("#", 1)[0]))
     if not ids:
         raise SystemExit(f"No problem numbers found in {path.name}.")
     return ids
